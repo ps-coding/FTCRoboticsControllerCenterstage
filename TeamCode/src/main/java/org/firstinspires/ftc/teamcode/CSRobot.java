@@ -37,9 +37,9 @@ public class CSRobot {
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
-        double drive = (-gp1.left_stick_y);
-        double strafe = (gp1.left_stick_x);
-        double turn = (gp1.right_stick_x);
+        final double drive = (-gp1.left_stick_y);
+        final double strafe = (gp1.left_stick_x);
+        final double turn = (gp2.right_stick_x);
 
         flDrivePower = (drive + strafe + turn);
         frDrivePower = (drive - strafe - turn);
@@ -47,10 +47,11 @@ public class CSRobot {
         brDrivePower = (drive + strafe - turn);
 
         final double SLOWDOWN = 8.0;
-        blDrive.setPower(blDrivePower / SLOWDOWN);
-        brDrive.setPower(brDrivePower / SLOWDOWN);
+
         flDrive.setPower(flDrivePower / SLOWDOWN);
         frDrive.setPower(frDrivePower / SLOWDOWN);
+        blDrive.setPower(blDrivePower / SLOWDOWN);
+        brDrive.setPower(brDrivePower / SLOWDOWN);
     }
 
     public void driveToInches(final double inches) {
@@ -61,7 +62,7 @@ public class CSRobot {
         driveWheel(wheel, (int) Math.floor(rotations * 288));
     }
 
-    public void driveWheel(Wheel wheel, final int pos) {
+    private void driveWheel(Wheel wheel, final int pos) {
         switch (wheel) {
             case FL:
                 flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -114,7 +115,7 @@ public class CSRobot {
         }
     }
 
-    private void driveToRotations(final double rotations) {
+    public void driveToRotations(final double rotations) {
         driveTo((int) Math.floor(rotations * 288));
     }
 
@@ -126,6 +127,7 @@ public class CSRobot {
         if (pos > 0) {
             drive(0.15);
             while (flDrive.getCurrentPosition() < pos) {
+                // Adjust power to each wheel to account for differences in encoder values
                 double diff = ((flDrive.getCurrentPosition() - frDrive.getCurrentPosition()) * 0.0015);
                 frDrive.setPower(0.15 + diff);
                 diff = ((flDrive.getCurrentPosition() - blDrive.getCurrentPosition()) * 0.0015);
@@ -136,6 +138,7 @@ public class CSRobot {
         } else {
             drive(-0.15);
             while (flDrive.getCurrentPosition() > pos) {
+                // Adjust power to each wheel to account for differences in encoder values
                 double diff = ((flDrive.getCurrentPosition() - frDrive.getCurrentPosition()) * 0.0015);
                 frDrive.setPower(-0.15 + diff);
                 diff = ((flDrive.getCurrentPosition() - blDrive.getCurrentPosition()) * 0.0015);
@@ -166,7 +169,7 @@ public class CSRobot {
         drive(0.0);
     }
 
-    private void drive(final double bothPow) { // override of drive(double, double)
+    private void drive(final double bothPow) {
         this.drive(bothPow, bothPow);
     }
 
