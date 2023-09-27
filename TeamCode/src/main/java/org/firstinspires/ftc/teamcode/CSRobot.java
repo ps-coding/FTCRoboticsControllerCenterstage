@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class CSRobot {
     private DcMotor flDrive;
@@ -21,6 +20,20 @@ public class CSRobot {
         frDrive = hardwareMap.get(DcMotor.class, "frDrive");
         blDrive = hardwareMap.get(DcMotor.class, "blDrive");
         brDrive = hardwareMap.get(DcMotor.class, "brDrive");
+
+        flDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        blDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        blDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        brDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        brDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        flDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        blDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        brDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
@@ -44,11 +57,60 @@ public class CSRobot {
         driveToRotations(inches * 4 * Math.PI);
     }
 
-    public void driveWheel(Wheel wheel) {
+    public void driveWheelToRotations(Wheel wheel, final double rotations) {
+        driveWheel(wheel, (int) Math.floor(rotations * 288));
+    }
+
+    public void driveWheel(Wheel wheel, final int pos) {
         switch (wheel) {
             case FL:
                 flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
+                flDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                flDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                flDrive.setTargetPosition(pos);
+                flDrive.setPower(0.15);
+                while (flDrive.getCurrentPosition() < pos) {
+                    // wait
+                }
+                flDrive.setPower(0.0);
+                flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                break;
+            case FR:
+                frDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                frDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                frDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                frDrive.setTargetPosition(pos);
+                frDrive.setPower(0.15);
+                while (frDrive.getCurrentPosition() < pos) {
+                    // wait
+                }
+                frDrive.setPower(0.0);
+                frDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                break;
+            case BL:
+                blDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                blDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                blDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                blDrive.setTargetPosition(pos);
+                blDrive.setPower(0.15);
+                while (blDrive.getCurrentPosition() < pos) {
+                    // wait
+                }
+                blDrive.setPower(0.0);
+                blDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                break;
+            case BR:
+                brDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                brDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                brDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                brDrive.setTargetPosition(pos);
+                brDrive.setPower(0.15);
+                while (brDrive.getCurrentPosition() < pos) {
+                    // wait
+                }
+                brDrive.setPower(0.0);
+                brDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                break;
         }
     }
 
