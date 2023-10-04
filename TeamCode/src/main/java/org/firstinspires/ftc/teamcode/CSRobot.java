@@ -3,12 +3,23 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class CSRobot {
     private DcMotor flDrive;
     private DcMotor frDrive;
     private DcMotor blDrive;
     private DcMotor brDrive;
+
+    private DcMotor rollMotor;
+
+    private DcMotor rootArm;
+    private Servo secondaryArm;
+    private Servo claw;
+
+    private boolean clawOpen = false;
+    private ElapsedTime clawDebounce = new ElapsedTime();
 
     public double flDrivePower;
     public double frDrivePower;
@@ -20,6 +31,12 @@ public class CSRobot {
         frDrive = hardwareMap.get(DcMotor.class, "frDrive");
         blDrive = hardwareMap.get(DcMotor.class, "blDrive");
         brDrive = hardwareMap.get(DcMotor.class, "brDrive");
+
+        rollMotor = hardwareMap.get(DcMotor.class, "rollMotor");
+
+        rootArm = hardwareMap.get(DcMotor.class, "rootArm");
+        secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
+        claw = hardwareMap.get(Servo.class, "claw");
 
         flDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -37,9 +54,20 @@ public class CSRobot {
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
+        // Core functionality
+        mainDrive(gp1);
+
+        // Plugins
+        rootArmDrive(gp2);
+        secondaryArmDrive(gp2);
+        toggleClaw(gp2);
+        rollIn(gp2);
+    }
+
+    public void mainDrive(Gamepad gp1) {
         final double drive = (-gp1.left_stick_y);
         final double strafe = (gp1.left_stick_x);
-        final double turn = (gp2.right_stick_x);
+        final double turn = (gp1.right_stick_x);
 
         flDrivePower = (drive + strafe + turn);
         frDrivePower = (drive - strafe - turn);
@@ -54,65 +82,46 @@ public class CSRobot {
         brDrive.setPower(brDrivePower / SLOWDOWN);
     }
 
+    public void rootArmDrive(Gamepad gp2) {
+        final double armPower = gp2.left_stick_y;
+        rootArm.setPower(armPower);
+    }
+
+    public void secondaryArmDrive(Gamepad gp2) {
+        final double armPos = (gp2.right_stick_y + 1) / 2;
+        // f [-1, 1]
+        // + 1 = [0, 2]
+        // / 2 = [0, 1]
+        // -> g [0, 1]
+        secondaryArm.setPosition(armPos);
+    }
+
+    public void toggleClaw(Gamepad gp2) {
+        if (gp2.a && clawDebounce.milliseconds() > 300) {
+            clawOpen = !clawOpen;
+            clawDebounce.reset();
+
+            if (clawOpen) {
+                claw.setPosition(0.3);
+            } else {
+                claw.setPosition(1.0);
+            }
+        }
+    }
+
+    public void rollIn(Gamepad gp2) {
+        if (gp2.b) {
+            rollMotor.setPower(1.0);
+            ElapsedTime second = new ElapsedTime();
+            while (second.milliseconds() < 1000) {
+                // wait
+            }
+            rollMotor.setPower(0.0);
+        }
+    }
+
     public void driveToInches(final double inches) {
         driveToRotations(inches * 4 * Math.PI);
-    }
-
-    public void driveWheelToRotations(Wheel wheel, final double rotations) {
-        driveWheel(wheel, (int) Math.floor(rotations * 288));
-    }
-
-    private void driveWheel(Wheel wheel, final int pos) {
-        switch (wheel) {
-            case FL:
-                flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                flDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                flDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                flDrive.setTargetPosition(pos);
-                flDrive.setPower(0.15);
-                while (flDrive.getCurrentPosition() < pos) {
-                    // wait
-                }
-                flDrive.setPower(0.0);
-                flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                break;
-            case FR:
-                frDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                frDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                frDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                frDrive.setTargetPosition(pos);
-                frDrive.setPower(0.15);
-                while (frDrive.getCurrentPosition() < pos) {
-                    // wait
-                }
-                frDrive.setPower(0.0);
-                frDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                break;
-            case BL:
-                blDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                blDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                blDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                blDrive.setTargetPosition(pos);
-                blDrive.setPower(0.15);
-                while (blDrive.getCurrentPosition() < pos) {
-                    // wait
-                }
-                blDrive.setPower(0.0);
-                blDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                break;
-            case BR:
-                brDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                brDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                brDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                brDrive.setTargetPosition(pos);
-                brDrive.setPower(0.15);
-                while (brDrive.getCurrentPosition() < pos) {
-                    // wait
-                }
-                brDrive.setPower(0.0);
-                brDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                break;
-        }
     }
 
     public void driveToRotations(final double rotations) {
