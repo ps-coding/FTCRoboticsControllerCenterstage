@@ -12,7 +12,7 @@ public class CSRobot {
     private DcMotor blDrive;
     private DcMotor brDrive;
 
-    private DcMotor rollMotor;
+//    private DcMotor rollMotor;
 
     private DcMotor rootArm;
     private Servo secondaryArm;
@@ -32,7 +32,7 @@ public class CSRobot {
         blDrive = hardwareMap.get(DcMotor.class, "blDrive");
         brDrive = hardwareMap.get(DcMotor.class, "brDrive");
 
-        rollMotor = hardwareMap.get(DcMotor.class, "rollMotor");
+//        rollMotor = hardwareMap.get(DcMotor.class, "rollMotor");
 
         rootArm = hardwareMap.get(DcMotor.class, "rootArm");
         secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
@@ -61,7 +61,7 @@ public class CSRobot {
         rootArmDrive(gp2);
         secondaryArmDrive(gp2);
         toggleClaw(gp2);
-        rollIn(gp2);
+//        rollIn(gp2);
     }
 
     public void mainDrive(Gamepad gp1) {
@@ -109,16 +109,16 @@ public class CSRobot {
         }
     }
 
-    public void rollIn(Gamepad gp2) {
-        if (gp2.b) {
-            rollMotor.setPower(1.0);
-            ElapsedTime second = new ElapsedTime();
-            while (second.milliseconds() < 1000) {
-                // wait
-            }
-            rollMotor.setPower(0.0);
-        }
-    }
+//    public void rollIn(Gamepad gp2) {
+//        if (gp2.b) {
+//            rollMotor.setPower(1.0);
+//            ElapsedTime second = new ElapsedTime();
+//            while (second.milliseconds() < 1000) {
+//                // wait
+//            }
+//            rollMotor.setPower(0.0);
+//        }
+//    }
 
     public void driveToInches(final double inches) {
         driveToRotations(inches * 4 * Math.PI);
