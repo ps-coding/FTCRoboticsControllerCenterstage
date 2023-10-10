@@ -15,22 +15,27 @@ public class CSRobot {
 //    private DcMotor rollMotor;
 
     private DcMotor rootArm;
-    private Servo secondaryArm;
-    private Servo claw;
-
-    private boolean clawOpen = false;
+    public Servo secondaryArm;
+    private ElapsedTime secondaryArmDebounce = new ElapsedTime();
+    private boolean secondaryArmOpen = false;
+    public Servo claw;
     private ElapsedTime clawDebounce = new ElapsedTime();
+    private boolean clawOpen = false;
+
 
     public double flDrivePower;
     public double frDrivePower;
     public double brDrivePower;
     public double blDrivePower;
+    public double rootArmPower;
 
     public void init(final HardwareMap hardwareMap) {
         flDrive = hardwareMap.get(DcMotor.class, "flDrive");
         frDrive = hardwareMap.get(DcMotor.class, "frDrive");
         blDrive = hardwareMap.get(DcMotor.class, "blDrive");
         brDrive = hardwareMap.get(DcMotor.class, "brDrive");
+
+        frDrive.setDirection(DcMotor.Direction.REVERSE);
 
 //        rollMotor = hardwareMap.get(DcMotor.class, "rollMotor");
 
@@ -51,6 +56,12 @@ public class CSRobot {
         frDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         blDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         brDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        rootArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rootArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rootArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        secondaryArm.setPosition(0.0);
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
@@ -83,17 +94,21 @@ public class CSRobot {
     }
 
     public void rootArmDrive(Gamepad gp2) {
-        final double armPower = gp2.left_stick_y;
-        rootArm.setPower(armPower);
+        rootArmPower = gp2.left_stick_y;
+        rootArm.setPower(rootArmPower / 8);
     }
 
     public void secondaryArmDrive(Gamepad gp2) {
-        final double armPos = (gp2.right_stick_y + 1) / 2;
-        // f [-1, 1]
-        // + 1 = [0, 2]
-        // / 2 = [0, 1]
-        // -> g [0, 1]
-        secondaryArm.setPosition(armPos);
+        if (gp2.b && secondaryArmDebounce.milliseconds() > 300) {
+            secondaryArmOpen = !secondaryArmOpen; // true = false; false = true
+            secondaryArmDebounce.reset();
+
+            if (secondaryArmOpen) {
+                secondaryArm.setPosition(1.0);
+            } else {
+                secondaryArm.setPosition(0.0);
+            }
+        }
     }
 
     public void toggleClaw(Gamepad gp2) {

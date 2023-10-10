@@ -24,6 +24,9 @@ public class TeleOpBasic extends OpMode {
         telemetry.addData("flPower: ", robot.flDrivePower + "\n");
         telemetry.addData("brPower: ", robot.brDrivePower + "\n");
         telemetry.addData("blPower: ", robot.blDrivePower + "\n");
+        telemetry.addData("rootArmPower: ", robot.rootArmPower + "\n");
+        telemetry.addData("secondaryArmPosition: ", robot.secondaryArm.getPosition() + "\n");
+        telemetry.addData("clawPosition: ", robot.claw.getPosition() + "\n");
         telemetry.update();
     }
 }
