@@ -99,7 +99,7 @@ public class CSRobot {
     }
 
     public void secondaryArmDrive(Gamepad gp2) {
-        if (gp2.b && secondaryArmDebounce.milliseconds() > 300) {
+        if (gp2.x && secondaryArmDebounce.milliseconds() > 300) {
             secondaryArmOpen = !secondaryArmOpen; // true = false; false = true
             secondaryArmDebounce.reset();
 
@@ -117,7 +117,7 @@ public class CSRobot {
             clawDebounce.reset();
 
             if (clawOpen) {
-                claw.setPosition(0.0);
+                claw.setPosition(0.1);
             } else {
                 claw.setPosition(1.0);
             }
