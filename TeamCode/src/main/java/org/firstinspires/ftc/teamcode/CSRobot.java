@@ -196,11 +196,4 @@ public class CSRobot {
         frDrive.setPower(pow);
         brDrive.setPower(pow);
     }
-
-    public enum Wheel {
-        FL,
-        FR,
-        BL,
-        BR
-    }
 }
