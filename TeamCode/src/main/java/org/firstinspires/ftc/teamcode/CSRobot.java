@@ -98,11 +98,11 @@ public class CSRobot {
 
     public void toggleClaw(Gamepad gp2) {
         if (gp2.a && clawDebounce.milliseconds() > 300) {
-            clawOpen = !clawOpen;
+            clawOpen = !clawOpen; // true = false; false = true
             clawDebounce.reset();
 
             if (clawOpen) {
-                claw.setPosition(0.3);
+                claw.setPosition(0.0);
             } else {
                 claw.setPosition(1.0);
             }
