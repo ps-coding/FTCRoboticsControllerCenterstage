@@ -3,6 +3,9 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.teamcode.CSRobot;
 
 @TeleOp(name = "TeleOpBasic", group = "TeleOp")
@@ -27,6 +30,9 @@ public class TeleOpBasic extends OpMode {
         telemetry.addData("rootArmPower: ", robot.rootArmPower + "\n");
         telemetry.addData("secondaryArmPosition: ", robot.secondaryArm.getPosition() + "\n");
         telemetry.addData("clawPosition: ", robot.claw.getPosition() + "\n");
+        telemetry.addData("gyroAngle1: ", robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).firstAngle + "\n");
+        telemetry.addData("gyroAngle2: ", robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle + "\n");
+        telemetry.addData("gyroAngle3: ", robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).thirdAngle + "\n");
         telemetry.update();
     }
 }

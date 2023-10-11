@@ -1,10 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 public class CSRobot {
     private DcMotor flDrive;
@@ -22,6 +27,7 @@ public class CSRobot {
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
 
+    public BNO055IMU imu;
 
     public double flDrivePower;
     public double frDrivePower;
@@ -62,6 +68,12 @@ public class CSRobot {
         rootArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         secondaryArm.setPosition(0.0);
+
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
+        imu.initialize(parameters);
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
