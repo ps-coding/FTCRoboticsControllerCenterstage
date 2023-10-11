@@ -94,6 +94,8 @@ public class CSRobot {
     }
 
     public void rootArmDrive(Gamepad gp2) {
+        if (rootArm.getCurrentPosition() > 7 && gp2.left_stick_y > 0) return;
+        if (rootArm.getCurrentPosition() < 0 && gp2.right_stick_y < 0) return;
         rootArmPower = gp2.left_stick_y;
         rootArm.setPower(rootArmPower / 8);
     }
@@ -136,11 +138,11 @@ public class CSRobot {
 //    }
 
     public void driveToInches(final double inches) {
-        driveToRotations(inches * 4 * Math.PI);
+        driveToRotations(inches / (4 * Math.PI));
     }
 
     public void driveToRotations(final double rotations) {
-        driveTo((int) Math.floor(rotations * 288));
+        driveTo((int) (rotations * 28));
     }
 
     private void driveTo(final int pos) {
