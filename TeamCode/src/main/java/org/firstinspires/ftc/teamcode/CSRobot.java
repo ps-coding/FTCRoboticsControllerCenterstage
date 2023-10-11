@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.ImuOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -27,7 +29,7 @@ public class CSRobot {
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
 
-    public BNO055IMU imu;
+    public BHI260IMU imu;
 
     public double flDrivePower;
     public double frDrivePower;
@@ -69,11 +71,11 @@ public class CSRobot {
 
         secondaryArm.setPosition(0.0);
 
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
-        imu.initialize(parameters);
+//        imu = hardwareMap.get(BHI260IMU.class, "imu");
+//        BHI260IMU.Parameters parameters = new BHI260IMU.Parameters();
+//        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+//        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
+//        imu.initialize(parameters);
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
@@ -107,7 +109,11 @@ public class CSRobot {
 
     public void rootArmDrive(Gamepad gp2) {
         rootArmPower = gp2.left_stick_y;
-        rootArm.setPower(rootArmPower / (Math.max(5, (15 * Math.abs(rootArm.getCurrentPosition())))));
+        if (rootArmPower <= 0) {
+            rootArm.setPower(rootArmPower);
+        } else {
+            rootArm.setPower(rootArmPower / (Math.max(3, (25 * Math.abs(rootArm.getCurrentPosition())) - 2)));
+        }
     }
 
     public void secondaryArmDrive(Gamepad gp2) {
@@ -148,11 +154,7 @@ public class CSRobot {
 //    }
 
     public void driveToInches(final double inches) {
-        driveToRotations(inches / (4 * Math.PI));
-    }
-
-    public void driveToRotations(final double rotations) {
-        driveTo((int) (rotations * 28));
+        driveTo((int) (inches * 5.5363107606));
     }
 
     private void driveTo(final int pos) {

@@ -15,6 +15,8 @@ public class AutoPark extends LinearOpMode {
         telemetry.update();
         robot.init(hardwareMap);
 
+        robot.secondaryArm.setPosition(0.0);
+
         waitForStart();
 
         telemetry.addData("Status", "Running");
