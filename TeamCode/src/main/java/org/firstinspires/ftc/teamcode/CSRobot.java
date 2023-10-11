@@ -106,12 +106,8 @@ public class CSRobot {
     }
 
     public void rootArmDrive(Gamepad gp2) {
-        if ((rootArm.getCurrentPosition() > 7 && gp2.left_stick_y > 0) || (rootArm.getCurrentPosition() < 0 && gp2.right_stick_y < 0)) {
-            rootArmPower = 0;
-        } else {
-            rootArmPower = gp2.left_stick_y;
-        }
-        rootArm.setPower(rootArmPower / 8);
+        rootArmPower = gp2.left_stick_y;
+        rootArm.setPower(rootArmPower / (Math.max(5, (15 * Math.abs(rootArm.getCurrentPosition())))));
     }
 
     public void secondaryArmDrive(Gamepad gp2) {
