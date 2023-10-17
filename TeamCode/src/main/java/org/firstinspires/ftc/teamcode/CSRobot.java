@@ -2,9 +2,11 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.ImuOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -29,7 +31,7 @@ public class CSRobot {
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
 
-    public BHI260IMU imu;
+    public IMU imu;
 
     public double flDrivePower;
     public double frDrivePower;
@@ -71,11 +73,16 @@ public class CSRobot {
 
         secondaryArm.setPosition(0.0);
 
-//        imu = hardwareMap.get(BHI260IMU.class, "imu");
-//        BHI260IMU.Parameters parameters = new BHI260IMU.Parameters();
-//        parameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
-//        parameters.calibrationDataFile = "BNO055IMUCalibration.json";
-//        imu.initialize(parameters);
+        IMU.Parameters imuParameters = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
+                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                )
+        );
+
+        imu = hardwareMap.get(BHI260IMU.class, "imu");
+        imu.initialize(imuParameters);
+
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
@@ -110,9 +117,9 @@ public class CSRobot {
     public void rootArmDrive(Gamepad gp2) {
         rootArmPower = gp2.left_stick_y;
         if (rootArmPower <= 0) {
-            rootArm.setPower(rootArmPower);
+            rootArm.setPower(rootArmPower / (Math.max(1, (0.2 * Math.abs(rootArm.getCurrentPosition())))));
         } else {
-            rootArm.setPower(rootArmPower / (Math.max(3, (25 * Math.abs(rootArm.getCurrentPosition())) - 2)));
+            rootArm.setPower(rootArmPower / 3);
         }
     }
 
@@ -122,7 +129,7 @@ public class CSRobot {
             secondaryArmDebounce.reset();
 
             if (secondaryArmOpen) {
-                secondaryArm.setPosition(1.0);
+                secondaryArm.setPosition(0.8);
             } else {
                 secondaryArm.setPosition(0.0);
             }

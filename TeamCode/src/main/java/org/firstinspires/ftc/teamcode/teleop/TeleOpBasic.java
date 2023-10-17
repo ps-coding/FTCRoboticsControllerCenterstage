@@ -30,9 +30,9 @@ public class TeleOpBasic extends OpMode {
         telemetry.addData("rootArmPower: ", robot.rootArmPower + "\n");
         telemetry.addData("secondaryArmPosition: ", robot.secondaryArm.getPosition() + "\n");
         telemetry.addData("clawPosition: ", robot.claw.getPosition() + "\n");
-//        telemetry.addData("gyroAngle1: ", robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).firstAngle + "\n");
-//        telemetry.addData("gyroAngle2: ", robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).secondAngle + "\n");
-//        telemetry.addData("gyroAngle3: ", robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).thirdAngle + "\n");
+        telemetry.addData("gyroAngle1: ", robot.imu.getRobotYawPitchRollAngles().getRoll(AngleUnit.DEGREES));
+        telemetry.addData("gyroAngle2: ", robot.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+        telemetry.addData("gyroAngle3: ", robot.imu.getRobotYawPitchRollAngles().getPitch(AngleUnit.DEGREES) + "\n");
         telemetry.update();
     }
 }
