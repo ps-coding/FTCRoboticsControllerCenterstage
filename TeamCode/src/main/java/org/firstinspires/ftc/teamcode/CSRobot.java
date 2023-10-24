@@ -1,19 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BHI260IMU;
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.ImuOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 public class CSRobot {
     private DcMotor flDrive;
@@ -23,10 +18,10 @@ public class CSRobot {
 
 //    private DcMotor rollMotor;
 
-    private DcMotor rootArm;
+    public DcMotor rootArm;
     public Servo secondaryArm;
     private ElapsedTime secondaryArmDebounce = new ElapsedTime();
-    private boolean secondaryArmOpen = false;
+    private SecondaryArmState secondaryArmState = SecondaryArmState.Down;
     public Servo claw;
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
@@ -72,6 +67,8 @@ public class CSRobot {
         rootArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         secondaryArm.setPosition(0.0);
+
+        claw.setPosition(1.0);
 
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -119,19 +116,20 @@ public class CSRobot {
         if (rootArmPower <= 0) {
             rootArm.setPower(rootArmPower / (Math.max(1, (0.2 * Math.abs(rootArm.getCurrentPosition())))));
         } else {
-            rootArm.setPower(rootArmPower / 3);
+            rootArm.setPower(rootArmPower / 6);
         }
     }
 
     public void secondaryArmDrive(Gamepad gp2) {
         if (gp2.x && secondaryArmDebounce.milliseconds() > 300) {
-            secondaryArmOpen = !secondaryArmOpen; // true = false; false = true
             secondaryArmDebounce.reset();
 
-            if (secondaryArmOpen) {
+            if (secondaryArmState == SecondaryArmState.Down) {
                 secondaryArm.setPosition(0.8);
-            } else {
+                secondaryArmState = SecondaryArmState.Up;
+            } else if (secondaryArmState == SecondaryArmState.Up) {
                 secondaryArm.setPosition(0.0);
+                secondaryArmState = SecondaryArmState.Down;
             }
         }
     }
@@ -142,7 +140,7 @@ public class CSRobot {
             clawDebounce.reset();
 
             if (clawOpen) {
-                claw.setPosition(0.1);
+                claw.setPosition(0.0);
             } else {
                 claw.setPosition(1.0);
             }
@@ -160,39 +158,103 @@ public class CSRobot {
 //        }
 //    }
 
-    public void driveToInches(final double inches) {
-        driveTo((int) (inches * 5.5363107606));
+    //potatoes
+
+    public void turnLeft(double target) {
+        this.imu.resetYaw();
+
+        double currentPosition = this.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double error = target - currentPosition;
+        double lastError;
+
+        double kp = 0.5;
+        double kd = 0.1;
+
+        final int DELAY = 50;
+
+        while (Math.abs(error) > 1) {
+            currentPosition = this.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            lastError = error;
+            error = target - currentPosition;
+
+            double proportional = error * kp;
+            double derivative = ((error - lastError) / DELAY) * kd;
+
+            double turn = (proportional + derivative) / (180 * kp);
+
+            flDrivePower = -turn;
+            frDrivePower = turn;
+            blDrivePower = -turn;
+            brDrivePower = turn;
+
+            flDrive.setPower(flDrivePower / 5);
+            frDrive.setPower(frDrivePower / 5);
+            blDrive.setPower(blDrivePower / 5);
+            brDrive.setPower(brDrivePower / 5);
+
+            try {Thread.sleep(DELAY);} catch (InterruptedException e) {}
+        }
     }
+
+    public void turnRight(double target) {
+        this.imu.resetYaw();
+
+        double currentPosition = -this.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double error = target - currentPosition;
+        double lastError;
+
+        double kp = 0.5;
+        double kd = 0.1;
+
+        final int DELAY = 50;
+
+        while (Math.abs(error) > 1) {
+            currentPosition = -this.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            lastError = error;
+            error = target - currentPosition;
+
+            double proportional = error * kp;
+            double derivative = ((error - lastError) / DELAY) * kd;
+
+            double turn = (proportional + derivative) / (180 * kp);
+
+            flDrivePower = turn;
+            frDrivePower = -turn;
+            blDrivePower = turn;
+            brDrivePower = -turn;
+
+            flDrive.setPower(flDrivePower / 5);
+            frDrive.setPower(frDrivePower / 5);
+            blDrive.setPower(blDrivePower / 5);
+            brDrive.setPower(brDrivePower / 5);
+
+            try {Thread.sleep(DELAY);} catch (InterruptedException e) {}
+        }
+    }
+
+    public void driveToInches(final double inches) {
+        driveTo((int) (inches * 4.931));
+    }
+
+    //spuds
 
     private void driveTo(final int pos) {
         setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
         setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         setTargetPos(pos);
+        setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+
         if (pos > 0) {
-            drive(0.15);
-            while (flDrive.getCurrentPosition() < pos) {
-                // Adjust power to each wheel to account for differences in encoder values
-                double diff = ((flDrive.getCurrentPosition() - frDrive.getCurrentPosition()) * 0.0015);
-                frDrive.setPower(0.15 + diff);
-                diff = ((flDrive.getCurrentPosition() - blDrive.getCurrentPosition()) * 0.0015);
-                blDrive.setPower(0.15 + diff);
-                diff = ((flDrive.getCurrentPosition() - brDrive.getCurrentPosition()) * 0.0015);
-                brDrive.setPower(0.15 + diff);
-            }
+            drive(0.25);
         } else {
-            drive(-0.15);
-            while (flDrive.getCurrentPosition() > pos) {
-                // Adjust power to each wheel to account for differences in encoder values
-                double diff = ((flDrive.getCurrentPosition() - frDrive.getCurrentPosition()) * 0.0015);
-                frDrive.setPower(-0.15 + diff);
-                diff = ((flDrive.getCurrentPosition() - blDrive.getCurrentPosition()) * 0.0015);
-                blDrive.setPower(-0.15 + diff);
-                diff = ((flDrive.getCurrentPosition() - brDrive.getCurrentPosition()) * 0.0015);
-                brDrive.setPower(-0.15 + diff);
-            }
+            drive(-0.25);
         }
+
+        while (flDrive.isBusy() || blDrive.isBusy() || frDrive.isBusy() || brDrive.isBusy()) {}
+
         brake();
+
         setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
@@ -231,5 +293,10 @@ public class CSRobot {
     private void rightPow(final double pow) {
         frDrive.setPower(pow);
         brDrive.setPower(pow);
+    }
+
+    private enum SecondaryArmState {
+        Down,
+        Up
     }
 }
