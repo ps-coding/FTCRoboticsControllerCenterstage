@@ -16,12 +16,10 @@ public class CSRobot {
     private DcMotor blDrive;
     private DcMotor brDrive;
 
-//    private DcMotor rollMotor;
-
     public DcMotor rootArm;
     public Servo secondaryArm;
     private ElapsedTime secondaryArmDebounce = new ElapsedTime();
-    private SecondaryArmState secondaryArmState = SecondaryArmState.Down;
+    private boolean secondaryArmUp = false;
     public Servo claw;
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
@@ -35,6 +33,7 @@ public class CSRobot {
     public double rootArmPower;
 
     public void init(final HardwareMap hardwareMap) {
+        // Initialize hardware map
         flDrive = hardwareMap.get(DcMotor.class, "flDrive");
         frDrive = hardwareMap.get(DcMotor.class, "frDrive");
         blDrive = hardwareMap.get(DcMotor.class, "blDrive");
@@ -42,44 +41,37 @@ public class CSRobot {
 
         frDrive.setDirection(DcMotor.Direction.REVERSE);
 
-//        rollMotor = hardwareMap.get(DcMotor.class, "rollMotor");
-
         rootArm = hardwareMap.get(DcMotor.class, "rootArm");
         secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
         claw = hardwareMap.get(Servo.class, "claw");
 
-        flDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        flDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        frDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        frDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        blDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        blDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        brDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        brDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // Set up drive motors
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         flDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         blDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         brDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // Set up root arm motor
         rootArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rootArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rootArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // Set up servo motors
         secondaryArm.setPosition(0.0);
-
         claw.setPosition(1.0);
 
+        // Set up the IMU (gyro/angle sensor)
         IMU.Parameters imuParameters = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
                         RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
                         RevHubOrientationOnRobot.UsbFacingDirection.LEFT
                 )
         );
-
         imu = hardwareMap.get(BHI260IMU.class, "imu");
         imu.initialize(imuParameters);
-
     }
 
     public void gamePadPower(Gamepad gp1, Gamepad gp2) {
@@ -90,7 +82,6 @@ public class CSRobot {
         rootArmDrive(gp2);
         secondaryArmDrive(gp2);
         toggleClaw(gp2);
-//        rollIn(gp2);
     }
 
     public void mainDrive(Gamepad gp1) {
@@ -124,20 +115,21 @@ public class CSRobot {
         if (gp2.x && secondaryArmDebounce.milliseconds() > 300) {
             secondaryArmDebounce.reset();
 
-            if (secondaryArmState == SecondaryArmState.Down) {
+            secondaryArmUp = !secondaryArmUp;
+
+            if (secondaryArmUp) {
                 secondaryArm.setPosition(0.8);
-                secondaryArmState = SecondaryArmState.Up;
-            } else if (secondaryArmState == SecondaryArmState.Up) {
+            } else {
                 secondaryArm.setPosition(0.0);
-                secondaryArmState = SecondaryArmState.Down;
             }
         }
     }
 
     public void toggleClaw(Gamepad gp2) {
         if (gp2.a && clawDebounce.milliseconds() > 300) {
-            clawOpen = !clawOpen; // true = false; false = true
             clawDebounce.reset();
+
+            clawOpen = !clawOpen;
 
             if (clawOpen) {
                 claw.setPosition(0.0);
@@ -146,19 +138,6 @@ public class CSRobot {
             }
         }
     }
-
-//    public void rollIn(Gamepad gp2) {
-//        if (gp2.b) {
-//            rollMotor.setPower(1.0);
-//            ElapsedTime second = new ElapsedTime();
-//            while (second.milliseconds() < 1000) {
-//                // wait
-//            }
-//            rollMotor.setPower(0.0);
-//        }
-//    }
-
-    //potatoes
 
     public void turnLeft(double target) {
         this.imu.resetYaw();
@@ -236,8 +215,6 @@ public class CSRobot {
         driveTo((int) (inches * 4.931));
     }
 
-    //spuds
-
     private void driveTo(final int pos) {
         setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
         setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -245,15 +222,16 @@ public class CSRobot {
         setTargetPos(pos);
         setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        if (pos > 0) {
-            drive(0.25);
-        } else {
-            drive(-0.25);
+        int direction = Math.abs(pos) / pos;
+        double distance = Math.abs(pos) - Math.abs(flDrive.getCurrentPosition());
+        drive(0.5 * direction * (distance / Math.abs(pos)));
+
+        while (flDrive.isBusy() || blDrive.isBusy() || frDrive.isBusy() || brDrive.isBusy()) {
+            distance = Math.abs(pos) - Math.abs(flDrive.getCurrentPosition());
+            drive(0.5 * direction * (distance / Math.abs(pos)));
         }
 
-        while (flDrive.isBusy() || blDrive.isBusy() || frDrive.isBusy() || brDrive.isBusy()) {}
-
-        brake();
+        drive(0.0);
 
         setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
@@ -272,31 +250,10 @@ public class CSRobot {
         brDrive.setTargetPosition(pos);
     }
 
-    private void brake() {
-        drive(0.0);
-    }
-
-    private void drive(final double bothPow) {
-        this.drive(bothPow, bothPow);
-    }
-
-    public void drive(final double lPow, final double rPow) {
-        leftPow(lPow);
-        rightPow(rPow);
-    }
-
-    private void leftPow(final double pow) {
+    private void drive(final double pow) {
         flDrive.setPower(pow);
         blDrive.setPower(pow);
-    }
-
-    private void rightPow(final double pow) {
         frDrive.setPower(pow);
         brDrive.setPower(pow);
-    }
-
-    private enum SecondaryArmState {
-        Down,
-        Up
     }
 }
