@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.CSRobot;
 
@@ -19,6 +18,7 @@ public class AutoPlaceFromBackLeft extends LinearOpMode {
         waitForStart();
 
         robot.claw.setPosition(1.0);
+        robot.secondaryArm.setPosition(0.4);
 
         telemetry.addData("Status", "Driving...");
         telemetry.update();
@@ -28,7 +28,7 @@ public class AutoPlaceFromBackLeft extends LinearOpMode {
         robot.driveToInches(72);
         robot.tinyStrafe(6);
 
-        robot.secondaryArm.setPosition(0.8);
+        robot.secondaryArm.setPosition(0.75);
 
         robot.rootArm.setPower(-0.3);
         try {Thread.sleep(1700);} catch (InterruptedException e) {}

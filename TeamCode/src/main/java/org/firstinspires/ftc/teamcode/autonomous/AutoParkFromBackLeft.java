@@ -18,6 +18,7 @@ public class AutoParkFromBackLeft extends LinearOpMode {
         waitForStart();
 
         robot.claw.setPosition(1.0);
+        robot.secondaryArm.setPosition(0.4);
 
         telemetry.addData("Status", "Driving...");
         telemetry.update();

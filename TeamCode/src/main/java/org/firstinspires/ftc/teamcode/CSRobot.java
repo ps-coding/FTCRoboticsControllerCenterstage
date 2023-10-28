@@ -24,7 +24,7 @@ public class CSRobot {
     private ElapsedTime flyDebounce = new ElapsedTime();
 
     private ElapsedTime secondaryArmDebounce = new ElapsedTime();
-    private boolean secondaryArmUp = false;
+    private SecondaryArmMode secondaryArmState = SecondaryArmMode.DOWN;
     public Servo claw;
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
@@ -114,7 +114,10 @@ public class CSRobot {
 
     public void rootArmDrive(Gamepad gp2) {
         rootArmPower = gp2.left_stick_y;
-        if (rootArmPower <= 0) {
+
+        if (rootArm.getCurrentPosition() <= -130 && rootArmPower <= 0) {
+            rootArm.setPower(0.0);
+        } else if (rootArmPower <= 0) {
             rootArm.setPower(rootArmPower / (Math.max(1, (0.2 * Math.abs(rootArm.getCurrentPosition())))));
         } else {
             rootArm.setPower(rootArmPower / 6);
@@ -125,12 +128,15 @@ public class CSRobot {
         if (gp2.x && secondaryArmDebounce.milliseconds() > 300) {
             secondaryArmDebounce.reset();
 
-            secondaryArmUp = !secondaryArmUp;
-
-            if (secondaryArmUp) {
-                secondaryArm.setPosition(0.8);
-            } else {
+            if (secondaryArmState == SecondaryArmMode.UP) {
                 secondaryArm.setPosition(0.0);
+                secondaryArmState = SecondaryArmMode.DOWN;
+            } else if (secondaryArmState == SecondaryArmMode.DOWN) {
+                secondaryArm.setPosition(0.4);
+                secondaryArmState = SecondaryArmMode.LOADED;
+            } else {
+                secondaryArm.setPosition(0.75);
+                secondaryArmState = SecondaryArmMode.UP;
             }
         }
     }
@@ -325,5 +331,11 @@ public class CSRobot {
         blDrive.setPower(pow);
         frDrive.setPower(pow);
         brDrive.setPower(pow);
+    }
+
+    enum SecondaryArmMode {
+        DOWN,
+        LOADED,
+        UP
     }
 }
