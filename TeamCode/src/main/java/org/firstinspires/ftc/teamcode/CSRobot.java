@@ -18,6 +18,11 @@ public class CSRobot {
 
     public DcMotor rootArm;
     public Servo secondaryArm;
+
+    public Servo flyRoot;
+    public Servo flyShoot;
+    private ElapsedTime flyDebounce = new ElapsedTime();
+
     private ElapsedTime secondaryArmDebounce = new ElapsedTime();
     private boolean secondaryArmUp = false;
     public Servo claw;
@@ -44,6 +49,8 @@ public class CSRobot {
         rootArm = hardwareMap.get(DcMotor.class, "rootArm");
         secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
         claw = hardwareMap.get(Servo.class, "claw");
+        flyRoot = hardwareMap.get(Servo.class, "flyRoot");
+        flyShoot = hardwareMap.get(Servo.class, "flyShoot");
 
         // Set up drive motors
         setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -60,8 +67,10 @@ public class CSRobot {
         rootArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Set up servo motors
-        secondaryArm.setPosition(0.0);
         claw.setPosition(1.0);
+        secondaryArm.setPosition(0.0);
+        flyRoot.setPosition(0.0);
+        flyShoot.setPosition(1.0);
 
         // Set up the IMU (gyro/angle sensor)
         IMU.Parameters imuParameters = new IMU.Parameters(
@@ -82,6 +91,7 @@ public class CSRobot {
         rootArmDrive(gp2);
         secondaryArmDrive(gp2);
         toggleClaw(gp2);
+        fly(gp2);
     }
 
     public void mainDrive(Gamepad gp1) {
@@ -139,8 +149,20 @@ public class CSRobot {
         }
     }
 
+    public void fly(Gamepad gp2) {
+        if (gp2.y && flyDebounce.milliseconds() > 300) {
+            flyDebounce.reset();
+
+            flyRoot.setPosition(1.0);
+            flyShoot.setPosition(0.0);
+        }
+    }
+
     public void turnLeft(double target) {
         this.imu.resetYaw();
+
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         double currentPosition = this.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         double error = target - currentPosition;
@@ -178,6 +200,9 @@ public class CSRobot {
     public void turnRight(double target) {
         this.imu.resetYaw();
 
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         double currentPosition = -this.imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         double error = target - currentPosition;
         double lastError;
@@ -209,31 +234,83 @@ public class CSRobot {
 
             try {Thread.sleep(DELAY);} catch (InterruptedException e) {}
         }
+
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        try {Thread.sleep(500);} catch (InterruptedException e) {}
     }
 
     public void driveToInches(final double inches) {
-        driveTo((int) (inches * 4.931));
+        driveTo((int) (inches * (100 / 11.75) * 1.5));
     }
 
-    private void driveTo(final int pos) {
-        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    public void driveTo(final int pos) {
+        if (pos == 0) return;
+
         setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        setTargetPos(pos);
-        setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
+        while (Math.abs(pos - flDrive.getCurrentPosition()) > 50) {
+            int flDistance = pos - flDrive.getCurrentPosition();
+            int frDistance = pos - frDrive.getCurrentPosition();
+            int blDistance = pos - blDrive.getCurrentPosition();
+            int brDistance = pos - brDrive.getCurrentPosition();
 
-        int direction = Math.abs(pos) / pos;
-        double distance = Math.abs(pos) - Math.abs(flDrive.getCurrentPosition());
-        drive(0.5 * direction * (distance / Math.abs(pos)));
+            flDrivePower = (double)flDistance / (double)Math.abs(pos);
+            blDrivePower = (double)blDistance / (double)Math.abs(pos);
+            frDrivePower = (double)frDistance / (double)Math.abs(pos);
+            brDrivePower = (double)brDistance / (double)Math.abs(pos);
 
-        while (flDrive.isBusy() || blDrive.isBusy() || frDrive.isBusy() || brDrive.isBusy()) {
-            distance = Math.abs(pos) - Math.abs(flDrive.getCurrentPosition());
-            drive(0.5 * direction * (distance / Math.abs(pos)));
+            flDrive.setPower(flDrivePower / 5);
+            frDrive.setPower(frDrivePower / 5);
+            blDrive.setPower(blDrivePower / 5);
+            brDrive.setPower(brDrivePower / 5);
+
+            Thread.yield();
         }
 
         drive(0.0);
 
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        try {Thread.sleep(500);} catch (InterruptedException e) {}
+    }
+
+    public void tinyStrafe(int pow) {
+        strafe(48 * pow);
+    }
+
+    public void strafe(int pos) {
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        int flBrPos = pos;
+        int frBlPos = -pos;
+
+        while (Math.abs(flBrPos - brDrive.getCurrentPosition()) > 10) {
+            int flDistance = flBrPos - flDrive.getCurrentPosition();
+            int frDistance = frBlPos - frDrive.getCurrentPosition();
+            int blDistance = frBlPos - blDrive.getCurrentPosition();
+            int brDistance = flBrPos - brDrive.getCurrentPosition();
+
+            flDrivePower = (double)flDistance / (double)Math.abs(flBrPos);
+            blDrivePower = (double)blDistance / (double)Math.abs(frBlPos);
+            frDrivePower = (double)frDistance / (double)Math.abs(frBlPos);
+            brDrivePower = (double)brDistance / (double)Math.abs(flBrPos);
+
+            flDrive.setPower(flDrivePower / 5);
+            frDrive.setPower(frDrivePower / 5);
+            blDrive.setPower(blDrivePower / 5);
+            brDrive.setPower(brDrivePower / 5);
+
+            Thread.yield();
+        }
+
+        drive(0.0);
+
+        try {Thread.sleep(500);} catch (InterruptedException e) {}
     }
 
     private void setDriveMode(final DcMotor.RunMode mode) {
@@ -241,13 +318,6 @@ public class CSRobot {
         frDrive.setMode(mode);
         blDrive.setMode(mode);
         brDrive.setMode(mode);
-    }
-
-    private void setTargetPos(final int pos) {
-        flDrive.setTargetPosition(pos);
-        frDrive.setTargetPosition(pos);
-        blDrive.setTargetPosition(pos);
-        brDrive.setTargetPosition(pos);
     }
 
     private void drive(final double pow) {
