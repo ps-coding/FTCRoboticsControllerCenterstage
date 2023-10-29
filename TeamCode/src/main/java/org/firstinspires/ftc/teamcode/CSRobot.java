@@ -21,13 +21,15 @@ public class CSRobot {
 
     public Servo flyRoot;
     public Servo flyShoot;
-    private ElapsedTime flyDebounce = new ElapsedTime();
+    private boolean flyFlew = false;
 
     private ElapsedTime secondaryArmDebounce = new ElapsedTime();
     private SecondaryArmMode secondaryArmState = SecondaryArmMode.DOWN;
     public Servo claw;
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
+
+    private ElapsedTime reset = new ElapsedTime();
 
     public IMU imu;
 
@@ -70,7 +72,52 @@ public class CSRobot {
         claw.setPosition(1.0);
         secondaryArm.setPosition(0.0);
         flyRoot.setPosition(0.0);
-        flyShoot.setPosition(1.0);
+        flyShoot.setPosition(0.0);
+
+        // Set up the IMU (gyro/angle sensor)
+        IMU.Parameters imuParameters = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
+                        RevHubOrientationOnRobot.UsbFacingDirection.LEFT
+                )
+        );
+        imu = hardwareMap.get(BHI260IMU.class, "imu");
+        imu.initialize(imuParameters);
+    }
+
+    public void autoInit(final HardwareMap hardwareMap) {
+        // Initialize hardware map
+        flDrive = hardwareMap.get(DcMotor.class, "flDrive");
+        frDrive = hardwareMap.get(DcMotor.class, "frDrive");
+        blDrive = hardwareMap.get(DcMotor.class, "blDrive");
+        brDrive = hardwareMap.get(DcMotor.class, "brDrive");
+
+        frDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        rootArm = hardwareMap.get(DcMotor.class, "rootArm");
+        secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
+        claw = hardwareMap.get(Servo.class, "claw");
+        flyRoot = hardwareMap.get(Servo.class, "flyRoot");
+        flyShoot = hardwareMap.get(Servo.class, "flyShoot");
+
+        // Set up drive motors
+        setDriveMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        setDriveMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        flDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        blDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        brDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        // Set up root arm motor
+        rootArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rootArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rootArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        // Set up servo motors
+        claw.setPosition(1.0);
+        flyRoot.setPosition(0.0);
+        flyShoot.setPosition(0.0);
 
         // Set up the IMU (gyro/angle sensor)
         IMU.Parameters imuParameters = new IMU.Parameters(
@@ -115,9 +162,7 @@ public class CSRobot {
     public void rootArmDrive(Gamepad gp2) {
         rootArmPower = gp2.left_stick_y;
 
-        if (rootArm.getCurrentPosition() <= -130 && rootArmPower <= 0) {
-            rootArm.setPower(0.0);
-        } else if (rootArmPower <= 0) {
+        if (rootArmPower <= 0) {
             rootArm.setPower(rootArmPower / (Math.max(1, (0.2 * Math.abs(rootArm.getCurrentPosition())))));
         } else {
             rootArm.setPower(rootArmPower / 6);
@@ -125,6 +170,13 @@ public class CSRobot {
     }
 
     public void secondaryArmDrive(Gamepad gp2) {
+        if (gp2.right_bumper && reset.milliseconds() > 300) {
+            reset.reset();
+
+            secondaryArm.setPosition(0.0);
+            secondaryArmState = SecondaryArmMode.DOWN;
+        }
+
         if (gp2.x && secondaryArmDebounce.milliseconds() > 300) {
             secondaryArmDebounce.reset();
 
@@ -134,8 +186,11 @@ public class CSRobot {
             } else if (secondaryArmState == SecondaryArmMode.DOWN) {
                 secondaryArm.setPosition(0.4);
                 secondaryArmState = SecondaryArmMode.LOADED;
+            } else if (secondaryArmState == SecondaryArmMode.LOADED) {
+                secondaryArm.setPosition(1.0);
+                secondaryArmState = SecondaryArmMode.MOMENTUM;
             } else {
-                secondaryArm.setPosition(0.75);
+                secondaryArm.setPosition(0.8);
                 secondaryArmState = SecondaryArmMode.UP;
             }
         }
@@ -156,11 +211,11 @@ public class CSRobot {
     }
 
     public void fly(Gamepad gp2) {
-        if (gp2.y && flyDebounce.milliseconds() > 300) {
-            flyDebounce.reset();
+        if (gp2.y && !flyFlew) {
+            flyFlew = true;
 
+            flyShoot.setPosition(1.0);
             flyRoot.setPosition(1.0);
-            flyShoot.setPosition(0.0);
         }
     }
 
@@ -336,6 +391,7 @@ public class CSRobot {
     enum SecondaryArmMode {
         DOWN,
         LOADED,
+        MOMENTUM,
         UP
     }
 }
