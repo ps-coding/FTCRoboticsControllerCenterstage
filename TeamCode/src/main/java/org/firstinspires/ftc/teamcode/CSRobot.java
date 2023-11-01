@@ -39,6 +39,8 @@ public class CSRobot {
     public double blDrivePower;
     public double rootArmPower;
 
+    public double multiplier;
+
     public void init(final HardwareMap hardwareMap) {
         // Initialize hardware map
         flDrive = hardwareMap.get(DcMotor.class, "flDrive");
@@ -142,6 +144,8 @@ public class CSRobot {
     }
 
     public void mainDrive(Gamepad gp1) {
+        multiplier = 1 - gp1.right_trigger;
+
         final double drive = (-gp1.left_stick_y);
         final double strafe = (gp1.left_stick_x);
         final double turn = (gp1.right_stick_x);
@@ -151,19 +155,22 @@ public class CSRobot {
         blDrivePower = (drive - strafe + turn);
         brDrivePower = (drive + strafe - turn);
 
-        final double SLOWDOWN = 8.0;
+        final double SLOWDOWN = 4.0;
 
-        flDrive.setPower(flDrivePower / SLOWDOWN);
-        frDrive.setPower(frDrivePower / SLOWDOWN);
-        blDrive.setPower(blDrivePower / SLOWDOWN);
-        brDrive.setPower(brDrivePower / SLOWDOWN);
+        flDrive.setPower(flDrivePower * multiplier / SLOWDOWN);
+        frDrive.setPower(frDrivePower * multiplier / SLOWDOWN);
+        blDrive.setPower(blDrivePower * multiplier / SLOWDOWN);
+        brDrive.setPower(brDrivePower * multiplier / SLOWDOWN);
     }
 
     public void rootArmDrive(Gamepad gp2) {
         rootArmPower = gp2.left_stick_y;
 
         if (rootArmPower <= 0) {
-            rootArm.setPower(rootArmPower / (Math.max(1, (0.2 * Math.abs(rootArm.getCurrentPosition())))));
+            rootArm.setPower(rootArmPower / (
+                    Math.max(1, (Math.exp(Math.abs(rootArm.getCurrentPosition() / 25))))
+                    // 120 / ln (100) ~ 25 ----> e ^ (position / 25)
+            ));
         } else {
             rootArm.setPower(rootArmPower / 6);
         }

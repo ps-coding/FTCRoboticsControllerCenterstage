@@ -34,8 +34,11 @@ public class AutoPlaceFromBackRight extends LinearOpMode {
         robot.secondaryArm.setPosition(0.8);
 
         ElapsedTime wait = new ElapsedTime();
-        while (wait.milliseconds() < 1550) {
-            robot.rootArm.setPower(-0.7 / (Math.max(1, (0.4 * Math.abs(robot.rootArm.getCurrentPosition())))));
+        while (wait.milliseconds() < 1500) {
+            robot.rootArm.setPower(-1.0 / (
+                    Math.max(1, (Math.exp(Math.abs(robot.rootArm.getCurrentPosition() / 25))))
+                    // 120 / ln (100) ~ 25 ----> e ^ (position / 25)
+            ));
         }
         robot.rootArm.setPower(0.0);
 
