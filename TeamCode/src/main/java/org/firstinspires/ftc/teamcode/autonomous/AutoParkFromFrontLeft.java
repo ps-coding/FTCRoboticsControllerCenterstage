@@ -13,7 +13,7 @@ public class AutoParkFromFrontLeft extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry.addData("Status", "Initialized.");
         telemetry.update();
-        robot.init(hardwareMap);
+        robot.autoInit(hardwareMap);
 
         waitForStart();
 

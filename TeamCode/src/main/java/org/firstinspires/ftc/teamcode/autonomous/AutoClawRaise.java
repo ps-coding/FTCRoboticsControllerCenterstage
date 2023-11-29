@@ -2,10 +2,11 @@ package org.firstinspires.ftc.teamcode.autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.CSRobot;
 
-@Autonomous(name = "AutoParkFromBackLeft", group = "Park")
+@Autonomous(name = "AutoClawRaise", group = "Experimental")
 public class AutoClawRaise extends LinearOpMode {
     CSRobot robot = new CSRobot();
 
@@ -24,9 +25,12 @@ public class AutoClawRaise extends LinearOpMode {
         telemetry.update();
 
         robot.secondaryArm.setPosition(0.8);
+        robot.rootArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.rootArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         while (true) {
-            robot.rootArm.setPower((-60 - robot.rootArm.getCurrentPosition()) / 60);
+            robot.rootArm.setPower((-60 - robot.rootArm.getCurrentPosition()) / 60 / Math.max(1, (Math.exp(Math.abs(robot.rootArm.getCurrentPosition() / 25)))));
+            Thread.yield();
         }
     }
 }

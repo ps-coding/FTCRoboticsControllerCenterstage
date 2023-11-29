@@ -28,23 +28,24 @@ public class AutoPlaceFromFrontLeft extends LinearOpMode {
 
         robot.tinyStrafe(1);
 
-        robot.driveToInches(14);
+        robot.driveToInches(16);
         robot.tinyStrafe(6);
 
         robot.secondaryArm.setPosition(0.8);
 
         ElapsedTime wait = new ElapsedTime();
-        while (wait.milliseconds() < 1500) {
-            robot.rootArm.setPower(-1.0 / (
-                    Math.max(1, (Math.exp(Math.abs(robot.rootArm.getCurrentPosition() / 25))))
-                    // 120 / ln (100) ~ 25 ----> e ^ (position / 25)
-            ));
+        while (wait.milliseconds() < 1000) {
+            robot.rootArm.setPower(-0.6 / (Math.max(1, (Math.exp(Math.abs(robot.rootArm.getCurrentPosition() / 10))))));
         }
         robot.rootArm.setPower(0.0);
 
-        robot.driveToInches(14);
+        robot.driveToInches(13);
         try {Thread.sleep(1000);} catch (InterruptedException e) {}
         robot.claw.setPosition(0.0);
         try {Thread.sleep(2000);} catch (InterruptedException e) {}
+        robot.secondaryArm.setPosition(0.0);
+        robot.rootArm.setPower(0.1);
+        try {Thread.sleep(500);} catch (InterruptedException e) {}
+        robot.rootArm.setPower(0.0);
     }
 }

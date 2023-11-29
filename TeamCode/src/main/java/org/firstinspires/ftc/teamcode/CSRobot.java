@@ -18,8 +18,6 @@ public class CSRobot {
 
     public DcMotor rootArm;
     public Servo secondaryArm;
-
-    public Servo flyRoot;
     public Servo flyShoot;
     private boolean flyFlew = false;
 
@@ -28,6 +26,8 @@ public class CSRobot {
     public Servo claw;
     private ElapsedTime clawDebounce = new ElapsedTime();
     private boolean clawOpen = false;
+
+    private ElapsedTime rootArmTime = new ElapsedTime();
 
     private ElapsedTime reset = new ElapsedTime();
 
@@ -53,7 +53,6 @@ public class CSRobot {
         rootArm = hardwareMap.get(DcMotor.class, "rootArm");
         secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
         claw = hardwareMap.get(Servo.class, "claw");
-        flyRoot = hardwareMap.get(Servo.class, "flyRoot");
         flyShoot = hardwareMap.get(Servo.class, "flyShoot");
 
         // Set up drive motors
@@ -73,8 +72,16 @@ public class CSRobot {
         // Set up servo motors
         claw.setPosition(1.0);
         secondaryArm.setPosition(0.0);
-        flyRoot.setPosition(0.0);
-        flyShoot.setPosition(0.0);
+        flyShoot.setPosition(1.0);
+
+        while (secondaryArm.getPosition() > 0.05) {
+            Thread.yield();
+        }
+
+        try { Thread.sleep(3000); } catch (InterruptedException error) { }
+
+        rootArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rootArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Set up the IMU (gyro/angle sensor)
         IMU.Parameters imuParameters = new IMU.Parameters(
@@ -99,7 +106,6 @@ public class CSRobot {
         rootArm = hardwareMap.get(DcMotor.class, "rootArm");
         secondaryArm = hardwareMap.get(Servo.class, "secondaryArm");
         claw = hardwareMap.get(Servo.class, "claw");
-        flyRoot = hardwareMap.get(Servo.class, "flyRoot");
         flyShoot = hardwareMap.get(Servo.class, "flyShoot");
 
         // Set up drive motors
@@ -118,8 +124,7 @@ public class CSRobot {
 
         // Set up servo motors
         claw.setPosition(1.0);
-        flyRoot.setPosition(0.0);
-        flyShoot.setPosition(0.0);
+        flyShoot.setPosition(1.0);
 
         // Set up the IMU (gyro/angle sensor)
         IMU.Parameters imuParameters = new IMU.Parameters(
@@ -139,12 +144,13 @@ public class CSRobot {
         // Plugins
         rootArmDrive(gp2);
         secondaryArmDrive(gp2);
+        rootArmToggle(gp2);
         toggleClaw(gp2);
         fly(gp2);
     }
 
     public void mainDrive(Gamepad gp1) {
-        multiplier = 1 - gp1.right_trigger;
+        multiplier = Math.max(0.3, 1 - gp1.right_trigger);
 
         final double drive = (-gp1.left_stick_y);
         final double strafe = (gp1.left_stick_x);
@@ -168,7 +174,7 @@ public class CSRobot {
 
         if (rootArmPower <= 0) {
             rootArm.setPower(rootArmPower / (
-                    Math.max(1, (Math.exp(Math.abs(rootArm.getCurrentPosition() / 25))))
+                    Math.max(1, (Math.exp(Math.abs(rootArm.getCurrentPosition() / 35))))
                     // 120 / ln (100) ~ 25 ----> e ^ (position / 25)
             ));
         } else {
@@ -188,7 +194,11 @@ public class CSRobot {
             secondaryArmDebounce.reset();
 
             if (secondaryArmState == SecondaryArmMode.UP) {
+                rootArm.setPower(-0.05);
                 secondaryArm.setPosition(0.0);
+                while (Math.abs(secondaryArm.getPosition()) > 0.05) {
+                    Thread.yield();
+                }
                 secondaryArmState = SecondaryArmMode.DOWN;
             } else if (secondaryArmState == SecondaryArmMode.DOWN) {
                 secondaryArm.setPosition(0.4);
@@ -200,6 +210,18 @@ public class CSRobot {
                 secondaryArm.setPosition(0.8);
                 secondaryArmState = SecondaryArmMode.UP;
             }
+        }
+    }
+
+    public void rootArmToggle(Gamepad gp2) {
+        if (gp2.left_bumper && rootArmTime.milliseconds() > 300) {
+            rootArmTime.reset();
+
+            ElapsedTime wait = new ElapsedTime();
+            while (wait.milliseconds() < 1000) {
+                rootArm.setPower(-0.6 / (Math.max(1, (Math.exp(Math.abs(rootArm.getCurrentPosition() / 10))))));
+            }
+            rootArm.setPower(0.0);
         }
     }
 
@@ -221,8 +243,7 @@ public class CSRobot {
         if (gp2.y && !flyFlew) {
             flyFlew = true;
 
-            flyShoot.setPosition(1.0);
-            flyRoot.setPosition(1.0);
+            flyShoot.setPosition(0.0);
         }
     }
 
