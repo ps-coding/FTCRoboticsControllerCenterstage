@@ -26,5 +26,12 @@ public class AutoParkFromBackLeft extends LinearOpMode {
         robot.tinyStrafe(1);
 
         robot.driveToInches(94);
+
+        robot.secondaryArm.setPosition(0.0);
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

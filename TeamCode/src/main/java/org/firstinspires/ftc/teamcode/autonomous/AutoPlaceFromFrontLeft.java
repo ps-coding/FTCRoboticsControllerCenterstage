@@ -34,18 +34,27 @@ public class AutoPlaceFromFrontLeft extends LinearOpMode {
         robot.secondaryArm.setPosition(0.8);
 
         ElapsedTime wait = new ElapsedTime();
-        while (wait.milliseconds() < 1000) {
-            robot.rootArm.setPower(-0.6 / (Math.max(1, (Math.exp(Math.abs(robot.rootArm.getCurrentPosition() / 10))))));
+        while (wait.milliseconds() < 900) {
+            robot.rootArm.setPower(-0.5 / (Math.max(1, (Math.exp(Math.abs(robot.rootArm.getCurrentPosition() / 13))))));
         }
         robot.rootArm.setPower(0.0);
 
-        robot.driveToInches(13);
+        robot.driveToInches(14);
         try {Thread.sleep(1000);} catch (InterruptedException e) {}
         robot.claw.setPosition(0.0);
         try {Thread.sleep(2000);} catch (InterruptedException e) {}
         robot.secondaryArm.setPosition(0.0);
-        robot.rootArm.setPower(0.1);
-        try {Thread.sleep(500);} catch (InterruptedException e) {}
+        try {
+            Thread.sleep(900);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        robot.rootArm.setPower(-0.1);
+        try {
+            Thread.sleep(750);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         robot.rootArm.setPower(0.0);
     }
 }

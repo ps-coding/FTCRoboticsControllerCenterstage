@@ -194,11 +194,19 @@ public class CSRobot {
             secondaryArmDebounce.reset();
 
             if (secondaryArmState == SecondaryArmMode.UP) {
-                rootArm.setPower(-0.05);
                 secondaryArm.setPosition(0.0);
-                while (Math.abs(secondaryArm.getPosition()) > 0.05) {
-                    Thread.yield();
+                try {
+                    Thread.sleep(900);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
+                rootArm.setPower(-0.1);
+                try {
+                    Thread.sleep(750);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                rootArm.setPower(0.0);
                 secondaryArmState = SecondaryArmMode.DOWN;
             } else if (secondaryArmState == SecondaryArmMode.DOWN) {
                 secondaryArm.setPosition(0.4);
@@ -218,8 +226,8 @@ public class CSRobot {
             rootArmTime.reset();
 
             ElapsedTime wait = new ElapsedTime();
-            while (wait.milliseconds() < 1000) {
-                rootArm.setPower(-0.6 / (Math.max(1, (Math.exp(Math.abs(rootArm.getCurrentPosition() / 10))))));
+            while (wait.milliseconds() < 900) {
+                rootArm.setPower(-0.5 / (Math.max(1, (Math.exp(Math.abs(rootArm.getCurrentPosition() / 13))))));
             }
             rootArm.setPower(0.0);
         }
